@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+CC="gcc"
+SRC="main.c"
+BIN="app"
+OUT="-o $BIN"
+CFLAGS="-std=c99 -Wall -pedantic"
+
+clear
+printf "\033[33m%*s\033[39m\n\n" "${COLUMNS:-$(tput cols)}" '' | tr ' ' '*'
+printf "  \033[33mMaker\033[39m (\033[33mCompiling\033[39m): \033[35m%s\033[39m (\033[36m%s\033[39m) => \033[34m%s\033[39m => \033[32m%s\033[39m\n" "$CC" "$CFLAGS" "$SRC" "$BIN"
+$CC $CFLAGS $SRC $OUT
+printf "  \033[33mMaker\033[39m (\033[33mRunning\033[39m): ./\033[32m%s\033[39m\n" $BIN
+printf "\n\033[33m%*s\033[39m\n" "${COLUMNS:-$(tput cols)}" '' | tr ' ' '*'
+echo
+./$BIN
+echo
