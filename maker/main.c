@@ -23,7 +23,7 @@ server_run(void* ptr)
     double curr_time = 0;
     
     while(server_on){ 
-        curr_time += 0.00001;
+        curr_time += 0.000009;
         double elapsed = curr_time - prev_tick;
         prev_tick = curr_time;
         lag += elapsed;
