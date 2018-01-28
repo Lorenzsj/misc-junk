@@ -7,26 +7,46 @@
 #include <pthread.h>
 #include "timer.h"
 
-#define _POSIX_C_SOURCE 199309L
-#define NS_PER_UPDATE 16000000 // 16ms, 64 ticks
+#define _POSIX_C_SOURCE 199309L // timespec, net_timer_t
+#define NS_PER_UPDATE 16000000 // 16ms, 64 ticks/sec
 
-// header
-void *server_run(void*);
-void server_tick(double*);
-void server_update(int64_t*);
-
-// global vars - get rid of
+// global variables (debug)
 volatile bool server_on;
 volatile int cmd;
 
+/******************************************************************************/
+/*                                  server                                    */
+/******************************************************************************/
+
+// server.h
+void server_boot(void);
+void server_shutdown(void);
+void *server_run(void*); //
+void server_update(int64_t*);
+
+// server.c
+void server_boot(void)
+{
+    fprintf(stderr, "Server: Boot\n");
+}
+
+void server_shutdown(void)
+{
+    fprintf(stderr, "Server: Shutdown\n");
+}
+
 void *server_run(void *ptr)
 {
+    fprintf(stderr, "Server: Run\n");
+
     net_timer_t now;
     int64_t prev_tick = 0;
     int64_t lag = 0;
 
+    server_boot();
+
     timer_reset(&now);
-    while (server_on) { 
+    while (server_on) {
         int64_t curr_time = timer_ns(&now);
         int64_t elapsed = curr_time - prev_tick;
         prev_tick = curr_time;
@@ -35,16 +55,20 @@ void *server_run(void *ptr)
         while (lag >= NS_PER_UPDATE) {
             fprintf(stderr, "Server: Current = %ld\n", curr_time);
             fprintf(stderr, "Server: Latency = %ld\n", lag);
-            server_update(&lag); 
+            server_update(&lag);
             lag -= NS_PER_UPDATE;
        	}
     }
+
+    server_shutdown();
 
     return NULL;
 }
 
 void server_update(int64_t *lag)
 {
+    fprintf(stderr, "Server: Update\n");
+
     if (cmd == -1) {
         fprintf(stderr, "Server: Shutdown\n");
         server_on = false;
@@ -60,27 +84,62 @@ void server_update(int64_t *lag)
     }
     else if (cmd == 3) {
         fprintf(stderr, "Server: Lag switch\n");
-        *lag += 32000000;
+        *lag += 32000000; // increase lag to 32ms
     }
     else if (cmd == 4) {
         fprintf(stderr, "Server: Lag reset\n");
-        *lag = 16000000;
+        *lag = 16000000; // reset to perfect latency
     }
 
     cmd = 0;
 }
 
-void client_run()
+/******************************************************************************/
+/*                                  client                                    */
+/******************************************************************************/
+
+// client.h
+void client_boot(void);
+void client_shutdown(void);
+void client_run(void);
+void client_update(void);
+
+// client.c
+void client_boot(void)
 {
+    fprintf(stderr, "Client: Boot\n");
+}
+
+void client_shutdown(void)
+{
+    fprintf(stderr, "Client: Shutdown\n");
+}
+
+void client_run(void)
+{
+    fprintf(stderr, "Client: Run\n");
+    client_boot();
+
     while (1) {
         printf("Input: ");
         scanf("%d", &cmd);
     }
+
+    client_shutdown();
 }
+
+void client_update(void)
+{
+    fprintf(stderr, "Client: Update\n");
+}
+
+/******************************************************************************/
+/*                                   main                                     */
+/******************************************************************************/
 
 int main(int argc, char *argv[])
 {
-    int err; 
+    int err;
     pthread_t server_thread;
     server_on = true;
 
@@ -95,6 +154,6 @@ int main(int argc, char *argv[])
     if (pthread_join(server_thread, NULL)) {
         fprintf(stderr, "Error: Unable to join server_thread\n");
     }
-    
+
     return 0;
 }
