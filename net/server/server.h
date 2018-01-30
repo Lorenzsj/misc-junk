@@ -1,15 +1,17 @@
 #ifndef SERVER_H
 #define SERVER_H
 
+#define MAX_LINE 256
+
 #include "worker.h"
 
 // types
-typedef void *(*server_op_t)(void*); // for pthreads
+
 typedef struct {
-    int err;
 } server_t;
 
 void server_run(void);
-void server_worker(server_op_t);
+void server_branch(size_t);
+void server_shell(void);
 
 #endif // SERVER_H

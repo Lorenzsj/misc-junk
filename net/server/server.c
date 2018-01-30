@@ -1,21 +1,51 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "server.h"
 
 void *debug_op(void *p)
 {
-    printf("A debug operation");
+    printf("A debug operation\n");
     return NULL;
 }
 
-void server_worker(server_op_t op)
+void server_branch(size_t threads)
 {
-    worker_spawn();
+    size_t i;
 
-    return;
+    for (i = 0; i < threads; i++) {
+        worker_spawn(&debug_op);
+    }
+}
+
+void server_shell(void)
+{
+    char buffer[MAX_LINE];
+
+    while(1) {
+        printf("Input: ");
+        if (fgets(buffer, MAX_LINE, stdin) != NULL) {
+            buffer[strcspn(buffer, "\n")] = 0; // remove newline and carriage
+        }
+
+        // process input
+        if (!strcmp(buffer, "debug")) {
+            printf("Output: %s\n", buffer);
+        }
+        else if (!strcmp(buffer, "quit")) {
+            break;
+        }
+        else {
+            printf("Try debug, quit\n");
+        }
+
+        memset(buffer, 0, sizeof(buffer));
+    }
 }
 
 void server_run(void)
 {
-    server_worker(&debug_op);
+    server_branch(4); // create worker threads
+
+    server_shell(); // interactive loop
 }
