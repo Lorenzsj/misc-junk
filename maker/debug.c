@@ -1,42 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
-
-// worker.h
-void worker_init(void);
-void worker_kill(void);
-void worker_dispatch(pthread_t*, void *(*)(void*));
-void *test(void*);
-
-// worker.c
-void *test(void *ptr)
-{
-    int i = 0;
-
-    while(i < 100) {
-        printf("%d\n", i);
-        i++;
-    }
-
-    return NULL;
-}
-
-void worker_init(void)
-{
-}
-
-void worker_kill(void)
-{
-}
-
-void worker_dispatch(pthread_t *th, void *(*f)(void *p))
-{
-    int err = pthread_create(th, NULL, (*f), NULL);
-    if (err != 0) {
-        fprintf(stderr, "Worker: pthread_create failed\n");
-        exit(err);
-    }
-}
+#include "worker.h"
 
 int main(void)
 {
@@ -46,7 +11,7 @@ int main(void)
 
     // start worker threads
     for (i = 0; i < MAX_THREADS; i++) {
-        worker_dispatch(&worker_threads[i], &test);
+        worker_spawn(&worker_threads[i], &test);
     }
 
     // wait for threads to finish
