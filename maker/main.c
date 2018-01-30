@@ -23,6 +23,7 @@ void server_boot(void);
 void server_shutdown(void);
 void *server_run(void*); //
 void server_update(int64_t*);
+void server_worker(void (*f)(char*), char *msg);
 
 // server.c
 void server_boot(void)
@@ -42,9 +43,11 @@ void *server_run(void *ptr)
     net_timer_t now;
     int64_t prev_tick = 0;
     int64_t lag = 0;
+    int64_t ticker = 0;
+    int64_t lag_avg = 0;
+    int64_t total_tick = 1;
 
     server_boot();
-
     timer_reset(&now);
     while (server_on) {
         int64_t curr_time = timer_ns(&now);
@@ -53,13 +56,16 @@ void *server_run(void *ptr)
         lag += elapsed;
 
         while (lag >= NS_PER_UPDATE) {
-            fprintf(stderr, "Server: Current = %ld\n", curr_time);
-            fprintf(stderr, "Server: Latency = %ld\n", lag);
+            ticker += lag;
+            lag_avg = (ticker/total_tick);
+            total_tick++;
+            fprintf(stderr, "Server: Average %ldns\n", lag_avg);
+            fprintf(stderr, "Server: Clock: %ldns\n", curr_time);
+            fprintf(stderr, "Server: Latency: %ldns\n", lag);
             server_update(&lag);
             lag -= NS_PER_UPDATE;
        	}
     }
-
     server_shutdown();
 
     return NULL;
@@ -94,6 +100,26 @@ void server_update(int64_t *lag)
     cmd = 0;
 }
 
+void server_worker(pthread_t &t, void (*f)(char*), char *msg)
+{
+    err = pthread_create(t, NULL, (*f), msg);
+    if (err != 0) {
+    	fprintf(stderr, "Error: Unable to create server_thread - %s\n", strerror(err));
+    	return 1;
+    }
+
+    client_run();
+
+    if (pthread_join(*t, NULL)) {
+        fprintf(stderr, "Error: Unable to join server_thread\n");
+    }
+}
+
+void server_log(char *msg)
+{
+    printf("Server: %s\n", msg);
+}
+
 /******************************************************************************/
 /*                                  client                                    */
 /******************************************************************************/
@@ -118,13 +144,13 @@ void client_shutdown(void)
 void client_run(void)
 {
     fprintf(stderr, "Client: Run\n");
+    
     client_boot();
-
     while (1) {
         printf("Input: ");
         scanf("%d", &cmd);
+	client_update();
     }
-
     client_shutdown();
 }
 
@@ -140,8 +166,10 @@ void client_update(void)
 int main(int argc, char *argv[])
 {
     int err;
-    pthread_t server_thread;
+    pthread_t server_thread, worker_thread;
     server_on = true;
+
+    server_worker(&worker_thread, &server_log, "hi");
 
     err = pthread_create(&server_thread, NULL, server_run, NULL);
     if (err != 0) {
