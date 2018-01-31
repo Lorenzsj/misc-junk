@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
 #include "server.h"
 
 void *debug_op(void *p)
@@ -12,10 +13,16 @@ void *debug_op(void *p)
 void server_branch(size_t threads)
 {
     size_t i;
+    pthread_t workers[4];
 
     for (i = 0; i < threads; i++) {
-        worker_spawn(&debug_op);
+        worker_spawn(&workers[i], &debug_op);
     }
+}
+
+void server_merge(void)
+{
+
 }
 
 void server_shell(void)
