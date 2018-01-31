@@ -10,10 +10,10 @@
 void *debug_op(void *arg)
 {
     state_t *state = ((state_t*) arg);
-    (*state).alive = true;
+    state->alive = true;
 
-    while ((*state).alive) {
-        printf("%d: A debug operation\n", (*state).err);
+    while (state->alive) {
+        printf("A debug operation\n");
         
         sleep(1);
     }
@@ -21,30 +21,27 @@ void *debug_op(void *arg)
     return NULL;
 }
 
-void server_branch(size_t threads)
+void server_branch(worker_t *workers)
 {
     size_t i;
-    worker_t workers[threads];
 
-    for (i = 0; i < threads; i++) {
-        
-        worker_spawn(&workers[i], &debug_op);
+    for (i = 0; i < 4; i++) {
+        workers[i] = worker_new(debug_op);
+        worker_spawn(&workers[i]);
     }
-
-    sleep(5);
-    worker_kill(&workers[0]);
-    
 }
 
-void server_merge(void)
+void server_merge(worker_t *worker)
 {
-
+    worker_kill(worker);
 }
 
-void server_shell(void)
+void server_shell(worker_t *workers)
 {
+    size_t i = 0;
     char buffer[MAX_LINE];
 
+    
     while(1) {
         printf("Input: ");
         if (fgets(buffer, MAX_LINE, stdin) != NULL) {
@@ -55,11 +52,21 @@ void server_shell(void)
         if (!strcmp(buffer, "debug")) {
             printf("Output: %s\n", buffer);
         }
+        else if (!strcmp(buffer, "kill")) {
+            if (i < 4) {
+                printf("Killed worker %lu!\n", i+1);
+                server_merge(&workers[i]);
+                i++;
+            }
+            else {
+                printf("No workers to kill!\n");
+            }
+        }
         else if (!strcmp(buffer, "quit")) {
             break;
         }
         else {
-            printf("Try debug, quit\n");
+            printf("Try debug, kill, quit\n");
         }
 
         memset(buffer, 0, sizeof(buffer));
@@ -68,7 +75,9 @@ void server_shell(void)
 
 void server_run(void)
 {
-    server_branch(1); // create worker threads
+    worker_t workers[4];
 
-    server_shell(); // interactive loop
+    server_branch(workers); // create worker threads
+
+    server_shell(workers); // interactive loop
 }

@@ -4,18 +4,23 @@
 #include <stdbool.h>
 #include <pthread.h>
 
-// contains information about the status of the worker
+// types
+typedef void *(*op_t)(void*); // for pthreads
+
+// information about the worker
 typedef struct {
-    volatile bool alive; // for loop condition
+    volatile bool alive; // loop condition
     int err;
 } state_t;
+// wrapper
 typedef struct {
-    state_t state;
     pthread_t thread;
+    state_t state;
+    op_t op;
 } worker_t;
-typedef void *(*worker_op_t)(void*); // for pthreads
 
-void worker_spawn(worker_t*, worker_op_t);
+worker_t worker_new(op_t);
+void worker_spawn(worker_t*);
 void worker_kill(worker_t*);
 
 #endif // WORKER_H
