@@ -13,12 +13,9 @@ void *debug_op(void *arg)
     (*state).alive = true;
 
     while ((*state).alive) {
-        if ((*state).err == 10) {
-            break;
-        }
-        printf("A debug operation\n");
+        printf("%d: A debug operation\n", (*state).err);
+        
         sleep(1);
-        (*state).err++;
     }
 
     return NULL;
@@ -27,12 +24,16 @@ void *debug_op(void *arg)
 void server_branch(size_t threads)
 {
     size_t i;
-    worker_t workers[4];
-    // pthread_t workers[4];
+    worker_t workers[threads];
 
     for (i = 0; i < threads; i++) {
-        worker_spawn(workers[i], &debug_op);
+        
+        worker_spawn(&workers[i], &debug_op);
     }
+
+    sleep(5);
+    worker_kill(&workers[0]);
+    
 }
 
 void server_merge(void)
@@ -67,7 +68,7 @@ void server_shell(void)
 
 void server_run(void)
 {
-    server_branch(4); // create worker threads
+    server_branch(1); // create worker threads
 
     server_shell(); // interactive loop
 }
