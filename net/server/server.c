@@ -21,8 +21,16 @@ void *debug_op(void *arg)
     return NULL;
 }
 
+void server_root()
+{    
+    worker_t workers[4];
+
+    server_shell(workers);
+}
+
 void server_branch(worker_t *worker)
 {
+    *worker = worker_new(debug_op);
     worker_spawn(worker);
 }
 
@@ -33,44 +41,37 @@ void server_merge(worker_t *worker)
 
 void server_shell(worker_t *workers)
 {
-    int i = -1;
+    size_t i = 0;
     char buffer[MAX_LINE];
     
     while(1) {
         printf("Input: ");
         if (fgets(buffer, MAX_LINE, stdin) != NULL) {
-            buffer[strcspn(buffer, "\n")] = 0; // remove newline and carriage
+            buffer[strcspn(buffer, "\n")] = 0;
         }
 
-        // process input
-        if (!strcmp(buffer, "debug")) {
-            printf("Output: %s\n", buffer);
+        if (!strcmp(buffer, "quit")) {
+            break;
         }
         else if (!strcmp(buffer, "spawn")) {
-            if (i < 3) {
-                i++;
+            if (i < 4) {
+                printf("Spawning worker %lu\n", i);
                 workers[i] = worker_new(debug_op);
                 server_branch(&workers[i]);
-                printf("Spawned worker %d!\n", i);   
+                i += 1;
             }
         }
         else if (!strcmp(buffer, "kill")) {
-            if (i == 0) {
-                i--;
-                printf("Killed worker 0\n");
-                server_merge(&workers[0]);
-            }
-            else {
-                printf("Killed worker %d!\n", i);
+            printf("Killing worker %lu\n", i-1);
+            if (i == 0)
                 server_merge(&workers[i]);
-                i--;
+            else if (i > 0) {
+                i -= 1;
+                server_merge(&workers[i]);
             }
-        }
-        else if (!strcmp(buffer, "quit")) {
-            break;
         }
         else {
-            printf("Try debug, kill, quit\n");
+            printf("Help: Try spawn, kill, quit\n");
         }
 
         memset(buffer, 0, sizeof(buffer));
@@ -79,7 +80,5 @@ void server_shell(worker_t *workers)
 
 void server_run(void)
 {
-    worker_t workers[4];
-
-    server_shell(workers); // interactive loop
+    server_root();
 }
