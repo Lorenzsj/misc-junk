@@ -42,6 +42,7 @@ void server_merge(worker_t *worker)
 void server_shell(worker_t *workers)
 {
     size_t i = 0;
+    int i = 0;
     char buffer[MAX_LINE];
     
     while(1) {
