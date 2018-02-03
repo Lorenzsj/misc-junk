@@ -1,0 +1,1 @@
+typedef void *(*op_t)(void*);
