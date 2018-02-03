@@ -8,9 +8,9 @@
 worker_t worker_new(op_t op)
 {
     worker_t worker;
-    worker.job.op = op;
-    worker.job.state.status = 0;
-    worker.job.state.alive = false;
+
+    worker.job = job_new(op);
+
 	return worker;
 }
 
@@ -21,8 +21,8 @@ void worker_spawn(worker_t *worker)
 {
     int err;
     
-    if (!worker->job.state.alive) {
-        err = pthread_create(&worker->thread, NULL, &job_default, &worker->job);
+    if (!worker_active()) {
+        err = pthread_create(&worker->thread, NULL, &job_handler, &worker->job);
         if (err != 0) {
             fprintf(stderr, "Worker: pthread_create failed\n");
             exit(1);
@@ -35,8 +35,8 @@ void worker_spawn(worker_t *worker)
  */
 void worker_kill(worker_t *worker)
 {
-    if (worker->job.state.alive) {
-        worker->job.state.alive = false;
+    if (worker_active()) {
+        worker->job.status.active = 0;
     }
 }
 
@@ -45,11 +45,11 @@ void worker_kill(worker_t *worker)
  */
  bool worker_active(const worker_t *worker)
  {
-     if (worker->job.state.alive) {
-         return true;
+     if (worker->job.status.active) {
+         return 1;
      }
      else {
-         return false;
+         return 0;
      }
  }
 

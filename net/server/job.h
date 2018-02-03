@@ -1,10 +1,12 @@
 #include "op.h"
-#include "state.h"
+#include "status.h"
 #include <pthread.h>
 
 typedef struct {
-    state_t state;
     op_t op;
+    status_t status;
 } job_t;
 
-void *job_default(void*);
+job_t job_new(op_t);
+
+void *job_handler(void*);

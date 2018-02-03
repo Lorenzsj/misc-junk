@@ -10,8 +10,8 @@ typedef struct {
     job_t job;
 } worker_t;
 
-worker_t worker_new(op_t); // malloc
-void worker_del(worker_t*); // free
+worker_t worker_new(op_t);
+
 void worker_spawn(worker_t*);
 void worker_kill(worker_t*);
 bool worker_active(const worker_t*);

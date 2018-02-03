@@ -10,18 +10,13 @@
 #define MIN_WORKERS 0
 #define MAX_WORKERS 4
 
-void *debug_op(void *arg)
+void debug_op(status_t *status)
 {
-    state_t *state = ((state_t*) arg);
-
-    state->alive = true;
-    while (state->alive) {
+    while (status->active) {
         printf("A debug operation\n");
         
         sleep(1);
     }
-
-    pthread_exit(NULL);
 }
 
 void server_root()
@@ -33,7 +28,7 @@ void server_root()
 
 void server_branch(worker_t *worker)
 {
-    *worker = worker_new(debug_op);
+    *worker = worker_new(&debug_op);
     worker_spawn(worker);
 }
 
